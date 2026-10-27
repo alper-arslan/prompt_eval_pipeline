@@ -12,7 +12,7 @@ expression, with no commentary. The pipeline measures how well it does that.
 2. `main.py` runs the prompt on every test case, then scores each output twice:
    - **Model grade**: a grader prompt returns strengths, weaknesses, reasoning and a 1-10 score against the case's criteria.
    - **Syntax grade**: 10 if the output parses as the expected format (`json`, `ast`, `re.compile`), otherwise 0.
-3. The final score per case is the mean of the two; the run prints the average and writes `results.json`.
+3. The final score per case is the mean of the two; the run prints the average and saves it to `runs/<timestamp>.json`.
 
 ## Setup
 
@@ -27,8 +27,12 @@ export ANTHROPIC_API_KEY=sk-ant-...   # or put it in a .env file
 
 ```sh
 uv run dataset_generator.py   # regenerate dataset.json (optional, one is included)
-uv run main.py                # run the eval
+uv run main.py                # run the eval from the command line
+uv run streamlit run app.py   # or use the web UI
 ```
+
+The UI lets you edit and run the dataset-generation prompt, tweak the cases by hand before saving them, edit the prompt template (`{task}` and `{format}` are filled per case), run the eval with
+live progress, inspect each case (lowest scores first), and compare saved runs on the History tab.
 
 ## Files
 
@@ -37,6 +41,7 @@ uv run main.py                # run the eval
 | `client.py` | Anthropic client, message helpers and the `chat` wrapper |
 | `dataset_generator.py` | Generates the test dataset |
 | `main.py` | Prompt runner, graders and eval loop |
+| `app.py` | Streamlit UI |
 | `dataset.json` | Generated test cases |
 
 ## Notes

@@ -12,6 +12,8 @@ import re
 import ast
 import os
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 from statistics import mean
 
 from anthropic import AuthenticationError, PermissionDeniedError
@@ -19,21 +21,26 @@ from anthropic import AuthenticationError, PermissionDeniedError
 from client import add_user_message, chat, add_assistant_message
 
 
-def run_prompt(test_case):
+DEFAULT_PROMPT_TEMPLATE = """Please solve the following task:
+{task}
+
+* The required output format is: {format}
+* Output exactly one code block containing only the answer, nothing else
+* For regex, the answer is a single-line pattern only: no code, no function, no imports
+* Do not add any comments, docstrings, commentary or explanations
+"""
+
+RUNS_DIR = "runs"
+
+
+def run_prompt(test_case, template=DEFAULT_PROMPT_TEMPLATE):
     """Run the prompt under test on one test case and return the raw model output.
 
+    The template's {task} and {format} placeholders are filled from the test case.
     The reply is prefilled with a code fence for the case's format and stopped at
     the closing fence, so the output holds only the answer itself.
     """
-    prompt = f"""
-    please solve the following task:
-    {test_case["task"]}
-
-    * The required output format is: {test_case["format"]}
-    * Output exactly one code block containing only the answer, nothing else
-    * For regex, the answer is a single-line pattern only: no code, no function, no imports
-    * Do not add any comments, docstrings, commentary or explanations
-"""
+    prompt = template.replace("{task}", test_case["task"]).replace("{format}", test_case["format"])
     messages = []
     add_user_message(messages, prompt)
     add_assistant_message(messages, f"```{test_case['format']}")
@@ -138,44 +145,72 @@ def grade_syntax(resp, test_case):
         return validate_regex(resp)
     raise ValueError(f"Unknown format in test case: {fmt!r}")
 
-def run_test_case(test_case):
-    """Run one test case and return its output, reasoning and final score.
+def run_test_case(test_case, template=DEFAULT_PROMPT_TEMPLATE):
+    """Run one test case and return its output, grades and final score.
 
     The final score is the mean of the model grade and the syntax grade.
     """
-    output = run_prompt(test_case)
+    output = run_prompt(test_case, template)
     model_grade = grade_by_model(test_case, output)
     model_score = model_grade["score"]
     reasoning = model_grade["reasoning"]
 
-    grade_score = grade_syntax(output, test_case)
-    score =  (model_score + grade_score) / 2
+    syntax_score = grade_syntax(output, test_case)
+    score = (model_score + syntax_score) / 2
     return {
         "output": output,
         "test_case": test_case,
         "score": score,
+        "model_score": model_score,
+        "syntax_score": syntax_score,
         "reasoning": reasoning,
+        "strengths": model_grade.get("strengths", []),
+        "weaknesses": model_grade.get("weaknesses", []),
     }
 
-def run_eval(dataset):
-    """Run every test case in the dataset, print the average score and return the results.
+def run_eval(dataset, template=DEFAULT_PROMPT_TEMPLATE, on_progress=None, max_workers=4):
+    """Run every test case in the dataset and return the results in dataset order.
 
-    A case that fails is skipped with a message, except authentication errors,
+    Cases run in parallel on max_workers threads. on_progress(done, total, result)
+    is called after each case finishes, with result None if that case failed.
+    A failed case is skipped with a message, except authentication errors,
     which stop the whole run.
     """
-    results = []
-    for test_case in dataset:
-        try:
-            results.append(run_test_case(test_case))
-        except (AuthenticationError, PermissionDeniedError):
-            raise
-        except Exception as e:
-            print(f"Skipping failed test case {test_case['task'][:60]!r}: {e}")
+    slots = [None] * len(dataset)
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(run_test_case, case, template): i for i, case in enumerate(dataset)}
+        for done, future in enumerate(as_completed(futures), start=1):
+            i = futures[future]
+            try:
+                slots[i] = future.result()
+            except (AuthenticationError, PermissionDeniedError):
+                for pending in futures:
+                    pending.cancel()
+                raise
+            except Exception as e:
+                print(f"Skipping failed test case {dataset[i]['task'][:60]!r}: {e}")
+            if on_progress:
+                on_progress(done, len(dataset), slots[i])
 
+    results = [r for r in slots if r is not None]
     if results:
         average_score = mean([result["score"] for result in results])
         print(f"Average score: {average_score} ({len(results)}/{len(dataset)} cases scored)")
     return results
+
+def save_run(results, template):
+    """Write a run to runs/<timestamp>.json and return the file path."""
+    os.makedirs(RUNS_DIR, exist_ok=True)
+    path = os.path.join(RUNS_DIR, datetime.now().strftime("%Y%m%d-%H%M%S") + ".json")
+    run = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "template": template,
+        "average": mean([r["score"] for r in results]),
+        "results": results,
+    }
+    with open(path, "w") as f:
+        json.dump(run, f, indent=2)
+    return path
 
 
 if __name__ == "__main__":
@@ -186,8 +221,6 @@ if __name__ == "__main__":
 
     results = run_eval(dataset)
     if not results:
-        sys.exit("No test cases were scored; leaving results.json untouched.")
+        sys.exit("No test cases were scored; nothing saved.")
 
-    with open("results.json", "w") as f:
-        json.dump(results, f, indent=2)
-    print(json.dumps(results, indent=2))
+    print(f"Saved to {save_run(results, DEFAULT_PROMPT_TEMPLATE)}")

@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 .idea/
 .env
+runs/
 results.json
 baseline.json
