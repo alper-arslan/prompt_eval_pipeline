@@ -19,6 +19,8 @@ expression, with no commentary. The pipeline measures how well it does that.
 Requires Python 3.11+ and [uv](https://docs.astral.sh/uv/).
 
 ```sh
+git clone https://github.com/alper-arslan/prompt_eval_pipeline.git
+cd prompt_eval_pipeline
 uv sync
 export ANTHROPIC_API_KEY=sk-ant-...   # or put it in a .env file
 ```
@@ -30,6 +32,8 @@ uv run dataset_generator.py   # regenerate dataset.json (optional, one is includ
 uv run main.py                # run the eval from the command line
 uv run streamlit run app.py   # or use the web UI
 ```
+
+The UI opens at http://localhost:8501. Stop it with Ctrl+C.
 
 The UI lets you edit and run the dataset-generation prompt, tweak the cases by hand before saving them, edit the prompt template (`{task}` and `{format}` are filled per case), run the eval with
 live progress, inspect each case (lowest scores first), and compare saved runs on the History tab.
@@ -47,6 +51,7 @@ live progress, inspect each case (lowest scores first), and compare saved runs o
 ## Notes
 
 - Runs on Claude Haiku (set in `client.py`).
+- Test cases run in parallel on a thread pool (4 workers by default). Change it with the "Parallel requests" slider in the UI or `max_workers` in `run_eval`. Results keep dataset order, and a higher count may hit API rate limits.
 - The API no longer accepts `temperature`, `top_p` or `top_k`, so `chat` does not expose them.
 
 ## License
