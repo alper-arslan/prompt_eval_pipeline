@@ -1,0 +1,11 @@
+[project]
+name = "prompt-eval-workflow"
+version = "0.1.0"
+description = "Custom prompt evaluation workflow using the Anthropic API"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=2.3.0",
+    "ipykernel>=7.4.0",
+    "python-dotenv>=1.2.4",
+]

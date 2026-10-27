@@ -1,0 +1,77 @@
+[
+  {
+    "task": "Parse an AWS S3 bucket name from a full S3 URI (e.g., s3://my-bucket/path/to/file.txt)",
+    "format": "regex",
+    "solution_criteria": "Regex pattern correctly extracts bucket name from S3 URIs, handles various valid bucket naming conventions"
+  },
+  {
+    "task": "Create a CloudFormation template JSON for an S3 bucket with versioning enabled",
+    "format": "json",
+    "solution_criteria": "Valid CloudFormation syntax, includes S3 bucket resource with VersioningConfiguration property set to Enabled"
+  },
+  {
+    "task": "Write a Python function that validates an AWS IAM role ARN format",
+    "format": "python",
+    "solution_criteria": "Function returns True for valid ARNs (arn:aws:iam::123456789012:role/RoleName), False otherwise"
+  },
+  {
+    "task": "Extract all AWS region codes from a CloudFormation template parameter string",
+    "format": "regex",
+    "solution_criteria": "Regex pattern matches valid AWS region codes (e.g., us-east-1, eu-west-1, ap-southeast-2)"
+  },
+  {
+    "task": "Create a JSON configuration object for an AWS Lambda function environment",
+    "format": "json",
+    "solution_criteria": "Valid JSON with Environment property containing Variables object with key-value pairs"
+  },
+  {
+    "task": "Write a Python function to convert an AWS RDS endpoint URL into host and port components",
+    "format": "python",
+    "solution_criteria": "Function correctly parses RDS endpoint (e.g., mydb.c9akciq32.us-east-1.rds.amazonaws.com:3306) into host and port"
+  },
+  {
+    "task": "Validate AWS EC2 security group rule format using regex",
+    "format": "regex",
+    "solution_criteria": "Pattern matches CIDR blocks (e.g., 10.0.0.0/8, 0.0.0.0/0) and port ranges"
+  },
+  {
+    "task": "Create a JSON policy document for AWS S3 bucket access",
+    "format": "json",
+    "solution_criteria": "Valid IAM policy JSON with Statement array, includes Effect, Action, Resource, and Principal"
+  },
+  {
+    "task": "Write a Python function to extract AWS account ID from an ARN string",
+    "format": "python",
+    "solution_criteria": "Function correctly extracts 12-digit account ID from various AWS ARN formats"
+  },
+  {
+    "task": "Extract AWS tag keys from EC2 instance resource strings using regex",
+    "format": "regex",
+    "solution_criteria": "Pattern identifies tag keys in format like tag:Environment, tag:Owner, tag:CostCenter"
+  },
+  {
+    "task": "Create a JSON object representing an AWS DynamoDB table schema with attributes and keys",
+    "format": "json",
+    "solution_criteria": "Valid JSON with AttributeDefinitions, KeySchema, and BillingMode properties"
+  },
+  {
+    "task": "Write a Python function to check if an AWS access key ID has valid format",
+    "format": "python",
+    "solution_criteria": "Function validates access key format (starts with AKIA, 20 characters total), returns boolean"
+  },
+  {
+    "task": "Match and extract AWS CloudWatch log group names from log statements using regex",
+    "format": "regex",
+    "solution_criteria": "Pattern correctly identifies log group names starting with /aws/ or custom names with various separators"
+  },
+  {
+    "task": "Create a JSON Secrets Manager secret object for storing database credentials",
+    "format": "json",
+    "solution_criteria": "Valid JSON with SecretString containing username, password, engine, and host fields"
+  },
+  {
+    "task": "Write a Python function to calculate AWS S3 object storage class from object metadata",
+    "format": "python",
+    "solution_criteria": "Function takes object size and access frequency parameters, returns appropriate storage class (STANDARD, GLACIER, DEEP_ARCHIVE)"
+  }
+]
